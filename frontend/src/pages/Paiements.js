@@ -32,11 +32,12 @@ function Paiements() {
 
   const fetchPaiements = async () => {
     try {
+      setLoading(true);
       const res = await getPaiements();
       setPaiements(res.data || []);
       setLoading(false);
     } catch (err) {
-      setError('Erreur chargement des paiements');
+      setError('Erreur lors du chargement des paiements.');
       setLoading(false);
     }
   };
@@ -77,6 +78,25 @@ function Paiements() {
     }
   };
 
+  // --- RENDU CONDITIONNEL (Hada hwa l-fix dial ESLint) ---
+  if (loading) {
+    return (
+      <div className="container mt-5 text-center">
+        <div className="spinner-border text-success" role="status"></div>
+        <p className="mt-2" style={{ color: "#fff" }}>Chargement des données...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mt-5">
+        <div className="alert alert-danger shadow">{error}</div>
+        <button className="btn btn-outline-light" onClick={fetchPaiements}>Réessayer</button>
+      </div>
+    );
+  }
+
   const totalPaye = paiements
     .filter(p => p.statut === 'Payé')
     .reduce((sum, p) => sum + Number(p.montant), 0);
@@ -98,7 +118,7 @@ function Paiements() {
       {/* Résumé rapide */}
       <div className="row mb-4">
         <div className="col-md-6">
-          <div className="card text-white bg-success shadow">
+          <div className="card text-white bg-success shadow border-0">
             <div className="card-body">
               <h5>Total Payé</h5>
               <h3>{totalPaye.toFixed(2)} DH</h3>
@@ -106,7 +126,7 @@ function Paiements() {
           </div>
         </div>
         <div className="col-md-6">
-          <div className="card text-white bg-warning shadow">
+          <div className="card text-white bg-warning shadow border-0">
             <div className="card-body">
               <h5>Total En Attente</h5>
               <h3>{totalEnAttente.toFixed(2)} DH</h3>
@@ -181,7 +201,7 @@ function Paiements() {
               </div>
             </div>
             <div className="mt-4 text-end">
-              <button type="submit" className="btn btn-success px-4">Enregistrer</button>
+              <button type="submit" className="btn btn-success px-4 shadow">Enregistrer</button>
             </div>
           </form>
         </div>
@@ -189,7 +209,7 @@ function Paiements() {
 
       {/* Liste filtrée */}
       <h4 className="mb-3" style={{ color: "#fff" }}>Liste des paiements</h4>
-      <div className="table-responsive shadow-sm" style={{ borderRadius: "10px", overflow: "hidden" }}>
+      <div className="table-responsive shadow" style={{ borderRadius: "10px", overflow: "hidden" }}>
         <table className="table table-hover mb-0">
           <thead className="table-dark">
             <tr>
@@ -204,24 +224,34 @@ function Paiements() {
             </tr>
           </thead>
           <tbody>
-            {filteredPaiements.map(p => (
-              <tr key={p.id_paiement}>
-                <td style={tableCellStyle}>{p.id_paiement}</td>
-                <td style={tableCellStyle}>{p.montant} DH</td>
-                <td style={tableCellStyle}>{p.date_paiement}</td>
-                <td style={tableCellStyle}>{p.mode_paiement}</td>
-                <td style={tableCellStyle}>{p.statut}</td>
-                <td style={tableCellStyle}>{p.type_abonnement || '-'}</td>
-                <td style={tableCellStyle}>{p.nom_membre || '-'}</td>
-                <td style={tableCellStyle}>
-                  {p.statut === 'En attente' && (
-                    <button className="btn btn-primary btn-sm" onClick={() => handleMarkPaye(p.id_paiement)}>
-                      Marquer Payé
-                    </button>
-                  )}
-                </td>
+            {filteredPaiements.length > 0 ? (
+              filteredPaiements.map(p => (
+                <tr key={p.id_paiement}>
+                  <td style={tableCellStyle}>{p.id_paiement}</td>
+                  <td style={tableCellStyle}>{p.montant} DH</td>
+                  <td style={tableCellStyle}>{p.date_paiement}</td>
+                  <td style={tableCellStyle}>{p.mode_paiement}</td>
+                  <td style={tableCellStyle}>
+                    <span className={`badge ${p.statut === 'Payé' ? 'bg-success' : p.statut === 'En attente' ? 'bg-warning text-dark' : 'bg-danger'}`}>
+                      {p.statut}
+                    </span>
+                  </td>
+                  <td style={tableCellStyle}>{p.type_abonnement || '-'}</td>
+                  <td style={tableCellStyle}>{p.nom_membre || '-'}</td>
+                  <td style={tableCellStyle}>
+                    {p.statut === 'En attente' && (
+                      <button className="btn btn-primary btn-sm shadow-sm" onClick={() => handleMarkPaye(p.id_paiement)}>
+                        Marquer Payé
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="8" className="text-center py-4" style={tableCellStyle}>Aucun paiement trouvé.</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
